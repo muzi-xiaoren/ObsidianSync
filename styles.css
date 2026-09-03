@@ -1,0 +1,62 @@
+.plugin-sync-error {
+	color: var(--text-error);
+}
+
+.plugin-sync-note {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	margin: 0.5em 0;
+}
+
+.plugin-sync-exclude {
+	width: 100%;
+	font-family: var(--font-monospace);
+}
+
+.plugin-sync-preview .plugin-sync-vault {
+	margin-bottom: 1em;
+}
+
+.plugin-sync-preview .plugin-sync-vault h3 {
+	margin: 0.6em 0 0.2em;
+}
+
+.plugin-sync-warning {
+	color: var(--text-warning);
+	font-size: var(--font-ui-smaller);
+}
+
+.plugin-sync-list {
+	margin: 0.2em 0;
+	padding-left: 1.2em;
+}
+
+.plugin-sync-list li {
+	line-height: 1.6;
+}
+
+/* Fixed-width verb column so the plugin names line up down the list. */
+.plugin-sync-kind {
+	display: inline-block;
+	min-width: 4.5em;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.plugin-sync-create .plugin-sync-kind {
+	color: var(--text-success);
+}
+
+.plugin-sync-remove .plugin-sync-kind {
+	color: var(--text-error);
+}
+
+.plugin-sync-update .plugin-sync-kind {
+	color: var(--text-accent);
+}
+
+.plugin-sync-version {
+	margin-left: 0.5em;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}

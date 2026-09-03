@@ -1,0 +1,10 @@
+{
+	"id": "plugin-sync",
+	"name": "Plugin Sync",
+	"version": "0.1.0",
+	"minAppVersion": "1.4.0",
+	"description": "Copy the plugins you installed in one vault into your other vaults, so you only download each plugin once.",
+	"author": "muzi-xiaoren",
+	"authorUrl": "https://github.com/muzi-xiaoren",
+	"isDesktopOnly": true
+}
