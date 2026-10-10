@@ -1,6 +1,6 @@
 import { copyFileSync, existsSync, mkdirSync, renameSync, rmSync, unlinkSync, writeFileSync } from "fs";
 import { join } from "path";
-import { communityPluginsFile, pluginsDir, readEnabledPlugins } from "./plugin-scan";
+import { communityPluginsFile, configDir, pluginsDir, readEnabledPlugins } from "./plugin-scan";
 import { changeCount, type VaultPlan } from "./plan";
 
 export interface ApplyResult {
@@ -74,7 +74,7 @@ function updateEnabledList(plan: VaultPlan): void {
 	}
 
 	const file = communityPluginsFile(plan.vaultPath);
-	mkdirSync(join(plan.vaultPath, ".obsidian"), { recursive: true });
+	mkdirSync(configDir(plan.vaultPath), { recursive: true });
 	writeAtomic(file, JSON.stringify(merged, null, 2) + "\n");
 }
 

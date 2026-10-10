@@ -13,7 +13,7 @@ export const CODE_FILES = ["main.js", "manifest.json", "styles.css"] as const;
 export const DATA_FILE = "data.json";
 
 export interface InstalledPlugin {
-	/** Folder name under .obsidian/plugins, which is also the plugin id. */
+	/** Folder name under the config folder's plugins/, which is also the plugin id. */
 	id: string;
 	/** Name from manifest.json, for display. Falls back to the id. */
 	name: string;
@@ -25,12 +25,27 @@ export interface InstalledPlugin {
 	hasData: boolean;
 }
 
+/**
+ * Name of the config folder inside a vault. Users can rename it, so main.ts
+ * sets it from Vault#configDir on load; other vaults are assumed to use the
+ * same name as the one this plugin runs in.
+ */
+let configDirName = "";
+
+export function setConfigDirName(name: string): void {
+	configDirName = name;
+}
+
+export function configDir(vaultPath: string): string {
+	return join(vaultPath, configDirName);
+}
+
 export function pluginsDir(vaultPath: string): string {
-	return join(vaultPath, ".obsidian", "plugins");
+	return join(configDir(vaultPath), "plugins");
 }
 
 export function communityPluginsFile(vaultPath: string): string {
-	return join(vaultPath, ".obsidian", "community-plugins.json");
+	return join(configDir(vaultPath), "community-plugins.json");
 }
 
 /**

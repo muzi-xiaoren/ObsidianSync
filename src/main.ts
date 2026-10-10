@@ -3,7 +3,7 @@ import { existsSync } from "fs";
 import { applyPlan, type ApplyResult } from "./apply";
 import { setLanguage, t } from "./i18n";
 import { buildPlan, changeCount, type TargetInput, type VaultPlan } from "./plan";
-import { readEnabledPlugins, scanPlugins } from "./plugin-scan";
+import { readEnabledPlugins, scanPlugins, setConfigDirName } from "./plugin-scan";
 import { PreviewModal } from "./preview-modal";
 import { DEFAULT_SETTINGS, SyncSettingTab, type SyncSettings } from "./settings";
 import { readVaultRegistry, type VaultEntry } from "./vault-registry";
@@ -12,6 +12,7 @@ export default class PluginSyncPlugin extends Plugin {
 	settings: SyncSettings = { ...DEFAULT_SETTINGS };
 
 	async onload(): Promise<void> {
+		setConfigDirName(this.app.vault.configDir);
 		await this.loadSettings();
 
 		this.addSettingTab(new SyncSettingTab(this.app, this));
