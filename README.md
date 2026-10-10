@@ -1,4 +1,4 @@
-# Plugin Sync
+# Vault Plugin Sync
 
 Install a plugin once, get it in every vault.
 
@@ -23,7 +23,7 @@ Obsidian keeps plugins per vault, so with several vaults you end up downloading 
 
 ## Usage
 
-1. Open **Settings → Plugin Sync**, pick the **source vault**, and tick the **target vaults**. Under **What to sync**, turn off any plugin you want to leave out.
+1. Open **Settings → Vault Plugin Sync**, pick the **source vault**, and tick the **target vaults**. Under **What to sync**, turn off any plugin you want to leave out.
 2. Click **Sync now** in the settings, click the ribbon icon, or run **Sync plugins to other vaults** from the command palette. Syncing only happens when you start it.
 3. Review the preview, hit **Sync**.
 4. **Restart Obsidian in the target vaults** — a running Obsidian does not notice plugins that appeared on disk underneath it.
@@ -37,8 +37,8 @@ Install [BRAT](https://github.com/TfTHacker/obsidian42-brat), run `BRAT: Add a b
 ### Manual
 
 1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/muzi-xiaoren/ObsidianSync/releases).
-2. Copy them into `<your-vault>/.obsidian/plugins/plugin-sync/`.
-3. Restart Obsidian, then enable **Plugin Sync** in *Settings → Community plugins*.
+2. Copy them into `<your-vault>/.obsidian/plugins/vault-plugin-sync/`.
+3. Restart Obsidian, then enable **Vault Plugin Sync** in *Settings → Community plugins*.
 
 Install it in whichever vault you want to sync **from**. It can copy itself to the others like any other plugin.
 

@@ -1,4 +1,4 @@
-import { Notice, Plugin } from "obsidian";
+import { FileSystemAdapter, Notice, Plugin } from "obsidian";
 import { existsSync } from "fs";
 import { applyPlan, type ApplyResult } from "./apply";
 import { setLanguage, t } from "./i18n";
@@ -7,11 +7,6 @@ import { readEnabledPlugins, scanPlugins } from "./plugin-scan";
 import { PreviewModal } from "./preview-modal";
 import { DEFAULT_SETTINGS, SyncSettingTab, type SyncSettings } from "./settings";
 import { readVaultRegistry, type VaultEntry } from "./vault-registry";
-
-/** The vault adapter exposes the absolute vault path on desktop only. */
-interface DesktopAdapter {
-	basePath?: string;
-}
 
 export default class PluginSyncPlugin extends Plugin {
 	settings: SyncSettings = { ...DEFAULT_SETTINGS };
@@ -30,7 +25,9 @@ export default class PluginSyncPlugin extends Plugin {
 
 	/** Absolute path of the vault this plugin instance is running in. */
 	currentVaultPath(): string {
-		return (this.app.vault.adapter as unknown as DesktopAdapter).basePath ?? "";
+		const adapter = this.app.vault.adapter;
+		// Only the desktop adapter is backed by a real folder on disk.
+		return adapter instanceof FileSystemAdapter ? adapter.getBasePath() : "";
 	}
 
 	async loadSettings(): Promise<void> {
@@ -115,7 +112,7 @@ export default class PluginSyncPlugin extends Plugin {
 
 		if (errors.length > 0) {
 			lines.push(`${s.failures}:`, ...errors);
-			console.error("[plugin-sync]", errors);
+			console.error("[vault-plugin-sync]", errors);
 		} else {
 			lines.push(s.restartHint);
 		}
