@@ -8,11 +8,6 @@
 	margin: 0.5em 0;
 }
 
-.plugin-sync-exclude {
-	width: 100%;
-	font-family: var(--font-monospace);
-}
-
 .plugin-sync-preview .plugin-sync-vault {
 	margin-bottom: 1em;
 }

@@ -1,7 +1,7 @@
 import { Notice, Plugin } from "obsidian";
 import { existsSync } from "fs";
 import { applyPlan, type ApplyResult } from "./apply";
-import { t } from "./i18n";
+import { setLanguage, t } from "./i18n";
 import { buildPlan, changeCount, type TargetInput, type VaultPlan } from "./plan";
 import { readEnabledPlugins, scanPlugins } from "./plugin-scan";
 import { PreviewModal } from "./preview-modal";
@@ -35,13 +35,14 @@ export default class PluginSyncPlugin extends Plugin {
 
 	async loadSettings(): Promise<void> {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		setLanguage(this.settings.language);
 	}
 
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
 	}
 
-	private runSync(): void {
+	runSync(): void {
 		const s = t();
 
 		let vaults: VaultEntry[];

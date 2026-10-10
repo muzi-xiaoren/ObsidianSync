@@ -5,8 +5,9 @@ import { moment } from "obsidian";
  *
  * The language follows Obsidian's own display language (which itself defaults
  * to the system language) via `moment.locale()`, with `navigator.language` as
- * a backstop. Unknown languages fall back to English. Adding a language means
- * adding one dictionary below plus its tag in LOCALES.
+ * a backstop, unless the user picked a language in the settings. Unknown
+ * languages fall back to English. Adding a language means adding one
+ * dictionary below plus its tag in LOCALES and LANGUAGE_CHOICES.
  */
 export interface Strings {
 	commandSync: string;
@@ -17,10 +18,16 @@ export interface Strings {
 	targetsName: string;
 	targetsDesc: string;
 	noOtherVaults: string;
+	syncNowName: string;
+	syncNowDesc: string;
+	syncNowButton: string;
 	scopeHeading: string;
-	excludeName: string;
-	excludeDesc: string;
+	scopeDesc: string;
+	noPluginsInSource: string;
 	optionsHeading: string;
+	languageName: string;
+	languageDesc: string;
+	languageAuto: string;
 	syncDataName: string;
 	syncDataDesc: string;
 	mirrorDeletesName: string;
@@ -62,11 +69,18 @@ const en: Strings = {
 	targetsDesc:
 		"Vaults that receive the source vault's plugins. Obsidian rewrites its config when it closes, so a vault it currently has open is skipped.",
 	noOtherVaults: "No other vaults found in Obsidian's vault list.",
+	syncNowName: "Sync now",
+	syncNowDesc:
+		"Copy the source vault's plugins to the selected vaults. Also available from the ribbon icon and the command palette.",
+	syncNowButton: "Sync now",
 	scopeHeading: "What to sync",
-	excludeName: "Plugins to skip",
-	excludeDesc:
-		"Plugin ids to leave alone, one per line. Everything else in the source vault is synced.",
+	scopeDesc: "Turn a plugin off to leave it out of the sync. The list comes from the source vault.",
+	noPluginsInSource: "The source vault has no plugins installed.",
 	optionsHeading: "Options",
+	languageName: "Language",
+	languageDesc:
+		"Language of this plugin's interface. The command name and ribbon tooltip change after the plugin is reloaded.",
+	languageAuto: "Follow Obsidian",
 	syncDataName: "Also sync plugin settings (data.json)",
 	syncDataDesc:
 		"Off by default: data.json holds each vault's own settings for a plugin, such as credentials and sync state, and copying it overwrites them.",
@@ -110,10 +124,18 @@ const zhCN: Strings = {
 	targetsDesc:
 		"接收源库插件的库。Obsidian 关闭时会重写自己的配置文件，所以它当前打开着的库会被跳过。",
 	noOtherVaults: "在 Obsidian 的库列表里没有找到其他库。",
+	syncNowName: "立即同步",
+	syncNowDesc:
+		"把源库的插件复制到勾选的目标库。也可以点左侧栏图标，或在命令面板里运行。",
+	syncNowButton: "开始同步",
 	scopeHeading: "同步范围",
-	excludeName: "排除的插件",
-	excludeDesc: "不参与同步的插件 id，每行一个。源库里其余插件都会同步。",
+	scopeDesc: "关掉的插件不参与同步。列表来自源库。",
+	noPluginsInSource: "源库里没有安装插件。",
 	optionsHeading: "选项",
+	languageName: "界面语言",
+	languageDesc:
+		"本插件的界面语言。命令名和侧栏图标提示在重新加载插件后生效。",
+	languageAuto: "跟随 Obsidian",
 	syncDataName: "同时同步插件设置（data.json）",
 	syncDataDesc:
 		"默认关闭：data.json 存的是各个库自己的插件设置，比如账号密码和同步状态，复制过去会把它们覆盖掉。",
@@ -155,10 +177,18 @@ const zhTW: Strings = {
 	targetsDesc:
 		"接收來源庫外掛的庫。Obsidian 關閉時會重寫自己的設定檔，因此它目前開著的庫會被略過。",
 	noOtherVaults: "在 Obsidian 的庫清單中找不到其他庫。",
+	syncNowName: "立即同步",
+	syncNowDesc:
+		"把來源庫的外掛複製到勾選的目標庫。也可以點左側欄圖示，或在命令面板中執行。",
+	syncNowButton: "開始同步",
 	scopeHeading: "同步範圍",
-	excludeName: "排除的外掛",
-	excludeDesc: "不參與同步的外掛 id，每行一個。來源庫中其餘外掛都會同步。",
+	scopeDesc: "關閉的外掛不參與同步。清單來自來源庫。",
+	noPluginsInSource: "來源庫中沒有安裝外掛。",
 	optionsHeading: "選項",
+	languageName: "介面語言",
+	languageDesc:
+		"本外掛的介面語言。命令名稱與側欄圖示提示在重新載入外掛後生效。",
+	languageAuto: "跟隨 Obsidian",
 	syncDataName: "同時同步外掛設定（data.json）",
 	syncDataDesc:
 		"預設關閉：data.json 存的是各個庫自己的外掛設定，例如帳號密碼與同步狀態，複製過去會將其覆蓋。",
@@ -201,10 +231,18 @@ const ja: Strings = {
 	targetsDesc:
 		"同期元のプラグインを受け取る保管庫。Obsidian は終了時に自身の設定を書き戻すため、現在開いている保管庫はスキップされます。",
 	noOtherVaults: "Obsidian の保管庫一覧に他の保管庫がありません。",
+	syncNowName: "今すぐ同期",
+	syncNowDesc:
+		"同期元の保管庫のプラグインを、選択した同期先にコピーします。リボンのアイコンやコマンドパレットからも実行できます。",
+	syncNowButton: "同期を開始",
 	scopeHeading: "同期する対象",
-	excludeName: "除外するプラグイン",
-	excludeDesc: "同期しないプラグイン id を 1 行ずつ。残りはすべて同期されます。",
+	scopeDesc: "オフにしたプラグインは同期されません。一覧は同期元の保管庫から取得しています。",
+	noPluginsInSource: "同期元の保管庫にプラグインがありません。",
 	optionsHeading: "オプション",
+	languageName: "表示言語",
+	languageDesc:
+		"このプラグインの表示言語。コマンド名とリボンのツールチップはプラグインの再読み込み後に反映されます。",
+	languageAuto: "Obsidian に合わせる",
 	syncDataName: "プラグイン設定（data.json）も同期",
 	syncDataDesc:
 		"既定でオフ：data.json には保管庫ごとの設定（認証情報や同期状態など）が入っており、コピーすると上書きされます。",
@@ -246,10 +284,18 @@ const ko: Strings = {
 	targetsDesc:
 		"원본의 플러그인을 받을 보관함. Obsidian은 종료 시 자체 설정을 다시 쓰므로, 현재 열려 있는 보관함은 건너뜁니다.",
 	noOtherVaults: "Obsidian 보관함 목록에서 다른 보관함을 찾지 못했습니다.",
+	syncNowName: "지금 동기화",
+	syncNowDesc:
+		"원본 보관함의 플러그인을 선택한 대상 보관함에 복사합니다. 리본 아이콘이나 명령 팔레트에서도 실행할 수 있습니다.",
+	syncNowButton: "동기화 시작",
 	scopeHeading: "동기화 범위",
-	excludeName: "제외할 플러그인",
-	excludeDesc: "동기화하지 않을 플러그인 id를 한 줄에 하나씩. 나머지는 모두 동기화됩니다.",
+	scopeDesc: "끈 플러그인은 동기화하지 않습니다. 목록은 원본 보관함에서 가져옵니다.",
+	noPluginsInSource: "원본 보관함에 설치된 플러그인이 없습니다.",
 	optionsHeading: "옵션",
+	languageName: "표시 언어",
+	languageDesc:
+		"이 플러그인의 표시 언어입니다. 명령 이름과 리본 툴팁은 플러그인을 다시 불러온 뒤 적용됩니다.",
+	languageAuto: "Obsidian 설정 따르기",
 	syncDataName: "플러그인 설정(data.json)도 동기화",
 	syncDataDesc:
 		"기본 꺼짐: data.json에는 보관함별 설정(인증 정보, 동기화 상태 등)이 있어 복사하면 덮어써집니다.",
@@ -292,6 +338,15 @@ const LOCALES: Record<string, Strings> = {
 	ko,
 };
 
+/** Languages offered in the settings, each labelled in its own language. */
+export const LANGUAGE_CHOICES: [code: string, label: string][] = [
+	["en", "English"],
+	["zh-cn", "简体中文"],
+	["zh-tw", "繁體中文"],
+	["ja", "日本語"],
+	["ko", "한국어"],
+];
+
 /** Region-less tags that need a specific regional variant. */
 const BASE_ALIASES: Record<string, string> = { zh: "zh-cn" };
 
@@ -304,10 +359,17 @@ function resolve(tag: string | undefined): Strings | null {
 
 let cachedTag: string | undefined | null = null;
 let cachedStrings: Strings = en;
+let override: string | null = null;
 
-/** Strings for the current Obsidian display language. */
+/** Pin the UI to one language, or pass "auto" to follow Obsidian again. */
+export function setLanguage(code: string): void {
+	override = code === "auto" ? null : code;
+	cachedTag = null;
+}
+
+/** Strings for the chosen language, or Obsidian's display language. */
 export function t(): Strings {
-	const tag = moment.locale();
+	const tag = override ?? moment.locale();
 	if (tag !== cachedTag) {
 		cachedTag = tag;
 		cachedStrings = resolve(tag) ?? resolve(navigator?.language) ?? en;

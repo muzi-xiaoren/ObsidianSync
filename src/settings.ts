@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type PluginSyncPlugin from "./main";
-import { t } from "./i18n";
+import { LANGUAGE_CHOICES, setLanguage, t } from "./i18n";
+import { scanPlugins, type InstalledPlugin } from "./plugin-scan";
 import { readVaultRegistry, type VaultEntry } from "./vault-registry";
 
 export interface SyncSettings {
@@ -13,6 +14,8 @@ export interface SyncSettings {
 	syncData: boolean;
 	mirrorDeletes: boolean;
 	skipConfirm: boolean;
+	/** A LANGUAGE_CHOICES code, or "auto" to follow Obsidian. */
+	language: string;
 }
 
 export const DEFAULT_SETTINGS: SyncSettings = {
@@ -22,6 +25,7 @@ export const DEFAULT_SETTINGS: SyncSettings = {
 	syncData: false,
 	mirrorDeletes: false,
 	skipConfirm: false,
+	language: "auto",
 };
 
 export class SyncSettingTab extends PluginSettingTab {
@@ -94,24 +98,61 @@ export class SyncSettingTab extends PluginSettingTab {
 				);
 		}
 
-		new Setting(containerEl).setName(s.scopeHeading).setHeading();
-
 		new Setting(containerEl)
-			.setName(s.excludeName)
-			.setDesc(s.excludeDesc)
-			.addTextArea((area) => {
-				area.inputEl.rows = 4;
-				area.inputEl.addClass("plugin-sync-exclude");
-				area.setValue(this.plugin.settings.exclude.join("\n")).onChange(async (value) => {
-					this.plugin.settings.exclude = value
-						.split("\n")
-						.map((line) => line.trim())
-						.filter((line) => line.length > 0);
-					await this.plugin.saveSettings();
-				});
-			});
+			.setName(s.syncNowName)
+			.setDesc(s.syncNowDesc)
+			.addButton((button) =>
+				button
+					.setButtonText(s.syncNowButton)
+					.setCta()
+					.onClick(() => this.plugin.runSync())
+			);
+
+		new Setting(containerEl).setName(s.scopeHeading).setHeading();
+		containerEl.createEl("p", { cls: "plugin-sync-note", text: s.scopeDesc });
+
+		let sourcePlugins: InstalledPlugin[] = [];
+		try {
+			sourcePlugins = scanPlugins(sourcePath);
+		} catch {
+			// An unreadable source is reported when syncing; the list just stays empty.
+		}
+		if (sourcePlugins.length === 0) {
+			containerEl.createEl("p", { cls: "plugin-sync-note", text: s.noPluginsInSource });
+		}
+		for (const plugin of sourcePlugins) {
+			const version = plugin.version ? ` · ${plugin.version}` : "";
+			new Setting(containerEl)
+				.setName(plugin.name)
+				.setDesc(`${plugin.id}${version}`)
+				.addToggle((toggle) =>
+					toggle
+						.setValue(!this.plugin.settings.exclude.includes(plugin.id))
+						.onChange(async (value) => {
+							const exclude = new Set(this.plugin.settings.exclude);
+							if (value) exclude.delete(plugin.id);
+							else exclude.add(plugin.id);
+							this.plugin.settings.exclude = [...exclude];
+							await this.plugin.saveSettings();
+						})
+				);
+		}
 
 		new Setting(containerEl).setName(s.optionsHeading).setHeading();
+
+		new Setting(containerEl)
+			.setName(s.languageName)
+			.setDesc(s.languageDesc)
+			.addDropdown((dropdown) => {
+				dropdown.addOption("auto", s.languageAuto);
+				for (const [code, label] of LANGUAGE_CHOICES) dropdown.addOption(code, label);
+				dropdown.setValue(this.plugin.settings.language).onChange(async (value) => {
+					this.plugin.settings.language = value;
+					setLanguage(value);
+					await this.plugin.saveSettings();
+					this.display();
+				});
+			});
 
 		new Setting(containerEl)
 			.setName(s.syncDataName)
