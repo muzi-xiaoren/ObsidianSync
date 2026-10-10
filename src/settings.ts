@@ -1,7 +1,7 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, type Setting, type SettingDefinitionItem } from "obsidian";
 import type PluginSyncPlugin from "./main";
 import { LANGUAGE_CHOICES, setLanguage, t } from "./i18n";
-import { scanPlugins, type InstalledPlugin } from "./plugin-scan";
+import { listPlugins, type PluginInfo } from "./plugin-scan";
 import { readVaultRegistry, type VaultEntry } from "./vault-registry";
 
 export interface SyncSettings {
@@ -14,6 +14,8 @@ export interface SyncSettings {
 	syncData: boolean;
 	mirrorDeletes: boolean;
 	skipConfirm: boolean;
+	/** Sync without a preview each time this vault opens. */
+	syncOnStartup: boolean;
 	/** A LANGUAGE_CHOICES code, or "auto" to follow Obsidian. */
 	language: string;
 }
@@ -25,6 +27,7 @@ export const DEFAULT_SETTINGS: SyncSettings = {
 	syncData: false,
 	mirrorDeletes: false,
 	skipConfirm: false,
+	syncOnStartup: false,
 	language: "auto",
 };
 
@@ -33,156 +36,185 @@ export class SyncSettingTab extends PluginSettingTab {
 		super(app, plugin);
 	}
 
-	display(): void {
-		const { containerEl } = this;
+	// Called on every update and once at registration for search indexing,
+	// so it reads manifests only and never hashes plugin files.
+	getSettingDefinitions(): SettingDefinitionItem[] {
 		const s = t();
-		containerEl.empty();
 
 		let vaults: VaultEntry[];
 		try {
 			vaults = readVaultRegistry();
 		} catch (error) {
-			containerEl.createEl("p", {
-				cls: "plugin-sync-error",
-				text: `${s.registryError}: ${error instanceof Error ? error.message : String(error)}`,
-			});
-			return;
+			return [
+				{
+					name: s.registryError,
+					desc: error instanceof Error ? error.message : String(error),
+				},
+			];
 		}
 
 		const currentPath = this.plugin.currentVaultPath();
 		const sourcePath = this.plugin.settings.sourceVaultPath ?? currentPath;
-
-		new Setting(containerEl)
-			.setName(s.sourceVaultName)
-			.setDesc(s.sourceVaultDesc)
-			.addDropdown((dropdown) => {
-				for (const vault of vaults) {
-					dropdown.addOption(vault.path, labelFor(vault, currentPath));
-				}
-				// A source that is no longer registered would leave the dropdown
-				// showing someone else's vault, so keep it listed until changed.
-				if (!vaults.some((v) => v.path === sourcePath)) {
-					dropdown.addOption(sourcePath, sourcePath);
-				}
-				dropdown.setValue(sourcePath).onChange(async (value) => {
-					this.plugin.settings.sourceVaultPath = value;
-					// The source can no longer be one of its own targets.
-					this.plugin.settings.targetVaultPaths =
-						this.plugin.settings.targetVaultPaths.filter((p) => p !== value);
-					await this.plugin.saveSettings();
-					this.display();
-				});
-			});
-
 		const targets = vaults.filter((v) => v.path !== sourcePath);
-		const targetSetting = new Setting(containerEl).setName(s.targetsName).setDesc(s.targetsDesc);
-		targetSetting.settingEl.addClass("plugin-sync-targets");
 
-		if (targets.length === 0) {
-			containerEl.createEl("p", { cls: "plugin-sync-note", text: s.noOtherVaults });
-		}
-		for (const vault of targets) {
-			new Setting(containerEl)
-				.setName(labelFor(vault, currentPath))
-				.setDesc(vault.path)
-				.addToggle((toggle) =>
-					toggle
-						.setValue(this.plugin.settings.targetVaultPaths.includes(vault.path))
-						.onChange(async (value) => {
-							const paths = new Set(this.plugin.settings.targetVaultPaths);
-							if (value) paths.add(vault.path);
-							else paths.delete(vault.path);
-							this.plugin.settings.targetVaultPaths = [...paths];
-							await this.plugin.saveSettings();
-						})
-				);
-		}
-
-		new Setting(containerEl)
-			.setName(s.syncNowName)
-			.setDesc(s.syncNowDesc)
-			.addButton((button) =>
-				button
-					.setButtonText(s.syncNowButton)
-					.setCta()
-					.onClick(() => this.plugin.runSync())
-			);
-
-		new Setting(containerEl).setName(s.scopeHeading).setHeading();
-		containerEl.createEl("p", { cls: "plugin-sync-note", text: s.scopeDesc });
-
-		let sourcePlugins: InstalledPlugin[] = [];
+		let sourcePlugins: PluginInfo[] = [];
 		try {
-			sourcePlugins = scanPlugins(sourcePath);
+			sourcePlugins = listPlugins(sourcePath);
 		} catch {
 			// An unreadable source is reported when syncing; the list just stays empty.
 		}
-		if (sourcePlugins.length === 0) {
-			containerEl.createEl("p", { cls: "plugin-sync-note", text: s.noPluginsInSource });
-		}
-		for (const plugin of sourcePlugins) {
-			const version = plugin.version ? ` · ${plugin.version}` : "";
-			new Setting(containerEl)
-				.setName(plugin.name)
-				.setDesc(`${plugin.id}${version}`)
-				.addToggle((toggle) =>
-					toggle
-						.setValue(!this.plugin.settings.exclude.includes(plugin.id))
-						.onChange(async (value) => {
-							const exclude = new Set(this.plugin.settings.exclude);
-							if (value) exclude.delete(plugin.id);
-							else exclude.add(plugin.id);
-							this.plugin.settings.exclude = [...exclude];
-							await this.plugin.saveSettings();
-						})
-				);
-		}
 
-		new Setting(containerEl).setName(s.optionsHeading).setHeading();
+		return [
+			{
+				type: "group",
+				items: [
+					{
+						name: s.sourceVaultName,
+						desc: s.sourceVaultDesc,
+						render: (setting) => this.renderSource(setting, vaults, sourcePath, currentPath),
+					},
+					{
+						name: s.syncNowName,
+						desc: s.syncNowDesc,
+						render: (setting) => {
+							setting.addButton((button) =>
+								button
+									.setButtonText(s.syncNowButton)
+									.setCta()
+									.onClick(() => this.plugin.runSync())
+							);
+						},
+					},
+				],
+			},
+			{
+				type: "group",
+				items: [
+					{ name: s.targetsName, desc: s.targetsDesc },
+					...(targets.length === 0
+						? [{ name: s.noOtherVaults, searchable: false }]
+						: targets.map((vault) => ({
+								name: labelFor(vault, currentPath),
+								desc: vault.path,
+								searchable: false,
+								render: (setting: Setting) => this.renderTarget(setting, vault),
+							}))),
+				],
+			},
+			{
+				type: "group",
+				items: [
+					{ name: s.scopeHeading, desc: s.scopeDesc },
+					...(sourcePlugins.length === 0
+						? [{ name: s.noPluginsInSource, searchable: false }]
+						: sourcePlugins.map((plugin) => ({
+								name: plugin.name,
+								desc: plugin.version ? `${plugin.id} · ${plugin.version}` : plugin.id,
+								searchable: false,
+								render: (setting: Setting) => this.renderPluginToggle(setting, plugin),
+							}))),
+				],
+			},
+			{
+				type: "group",
+				heading: s.optionsHeading,
+				items: [
+					{
+						name: s.languageName,
+						desc: s.languageDesc,
+						control: {
+							type: "dropdown",
+							key: "language",
+							options: { auto: s.languageAuto, ...Object.fromEntries(LANGUAGE_CHOICES) },
+						},
+					},
+					{
+						name: s.syncOnStartupName,
+						desc: s.syncOnStartupDesc,
+						control: { type: "toggle", key: "syncOnStartup" },
+					},
+					{
+						name: s.syncDataName,
+						desc: s.syncDataDesc,
+						control: { type: "toggle", key: "syncData" },
+					},
+					{
+						name: s.mirrorDeletesName,
+						desc: s.mirrorDeletesDesc,
+						control: { type: "toggle", key: "mirrorDeletes" },
+					},
+					{
+						name: s.skipConfirmName,
+						desc: s.skipConfirmDesc,
+						control: { type: "toggle", key: "skipConfirm" },
+					},
+				],
+			},
+		];
+	}
 
-		new Setting(containerEl)
-			.setName(s.languageName)
-			.setDesc(s.languageDesc)
-			.addDropdown((dropdown) => {
-				dropdown.addOption("auto", s.languageAuto);
-				for (const [code, label] of LANGUAGE_CHOICES) dropdown.addOption(code, label);
-				dropdown.setValue(this.plugin.settings.language).onChange(async (value) => {
-					this.plugin.settings.language = value;
-					setLanguage(value);
-					await this.plugin.saveSettings();
-					this.display();
-				});
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		await super.setControlValue(key, value);
+		// Every label on the page is translated, so a new language means a rebuild.
+		if (key === "language" && typeof value === "string") {
+			setLanguage(value);
+			this.update();
+		}
+	}
+
+	private renderSource(
+		setting: Setting,
+		vaults: VaultEntry[],
+		sourcePath: string,
+		currentPath: string
+	): void {
+		setting.addDropdown((dropdown) => {
+			for (const vault of vaults) {
+				dropdown.addOption(vault.path, labelFor(vault, currentPath));
+			}
+			// A source that is no longer registered would leave the dropdown
+			// showing someone else's vault, so keep it listed until changed.
+			if (!vaults.some((v) => v.path === sourcePath)) {
+				dropdown.addOption(sourcePath, sourcePath);
+			}
+			dropdown.setValue(sourcePath).onChange(async (value) => {
+				this.plugin.settings.sourceVaultPath = value;
+				// The source can no longer be one of its own targets.
+				this.plugin.settings.targetVaultPaths =
+					this.plugin.settings.targetVaultPaths.filter((p) => p !== value);
+				await this.plugin.saveSettings();
+				// Targets and the plugin list both depend on the source.
+				this.update();
 			});
+		});
+	}
 
-		new Setting(containerEl)
-			.setName(s.syncDataName)
-			.setDesc(s.syncDataDesc)
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.syncData).onChange(async (value) => {
-					this.plugin.settings.syncData = value;
+	private renderTarget(setting: Setting, vault: VaultEntry): void {
+		setting.addToggle((toggle) =>
+			toggle
+				.setValue(this.plugin.settings.targetVaultPaths.includes(vault.path))
+				.onChange(async (value) => {
+					const paths = new Set(this.plugin.settings.targetVaultPaths);
+					if (value) paths.add(vault.path);
+					else paths.delete(vault.path);
+					this.plugin.settings.targetVaultPaths = [...paths];
 					await this.plugin.saveSettings();
 				})
-			);
+		);
+	}
 
-		new Setting(containerEl)
-			.setName(s.mirrorDeletesName)
-			.setDesc(s.mirrorDeletesDesc)
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.mirrorDeletes).onChange(async (value) => {
-					this.plugin.settings.mirrorDeletes = value;
+	private renderPluginToggle(setting: Setting, plugin: PluginInfo): void {
+		setting.addToggle((toggle) =>
+			toggle
+				.setValue(!this.plugin.settings.exclude.includes(plugin.id))
+				.onChange(async (value) => {
+					const exclude = new Set(this.plugin.settings.exclude);
+					if (value) exclude.delete(plugin.id);
+					else exclude.add(plugin.id);
+					this.plugin.settings.exclude = [...exclude];
 					await this.plugin.saveSettings();
 				})
-			);
-
-		new Setting(containerEl)
-			.setName(s.skipConfirmName)
-			.setDesc(s.skipConfirmDesc)
-			.addToggle((toggle) =>
-				toggle.setValue(this.plugin.settings.skipConfirm).onChange(async (value) => {
-					this.plugin.settings.skipConfirm = value;
-					await this.plugin.saveSettings();
-				})
-			);
+		);
 	}
 }
 

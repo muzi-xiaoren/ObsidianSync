@@ -1,11 +1,11 @@
-import { moment } from "obsidian";
+import { getLanguage } from "obsidian";
 
 /**
  * Localised UI strings.
  *
  * The language follows Obsidian's own display language (which itself defaults
- * to the system language) via `moment.locale()`, with `navigator.language` as
- * a backstop, unless the user picked a language in the settings. Unknown
+ * to the system language) via `getLanguage()`, unless the user picked a
+ * language in the settings. Unknown
  * languages fall back to English. Adding a language means adding one
  * dictionary below plus its tag in LOCALES and LANGUAGE_CHOICES.
  */
@@ -34,6 +34,9 @@ export interface Strings {
 	mirrorDeletesDesc: string;
 	skipConfirmName: string;
 	skipConfirmDesc: string;
+	syncOnStartupName: string;
+	syncOnStartupDesc: string;
+	startupSynced: string;
 
 	registryError: string;
 	sourceMissing: string;
@@ -89,6 +92,10 @@ const en: Strings = {
 		"Also delete plugins from the target vaults when the source vault no longer has them.",
 	skipConfirmName: "Skip the confirmation dialog",
 	skipConfirmDesc: "Apply changes immediately instead of showing what would change first.",
+	syncOnStartupName: "Sync when Obsidian starts",
+	syncOnStartupDesc:
+		"Each time this vault opens, copy the source vault's changes to the target vaults without asking. Vaults that are open are skipped as usual.",
+	startupSynced: "Synced plugins on startup",
 
 	registryError: "Could not read Obsidian's vault list",
 	sourceMissing: "The source vault no longer exists. Pick another one in the settings.",
@@ -143,6 +150,10 @@ const zhCN: Strings = {
 	mirrorDeletesDesc: "源库里已经删掉的插件，也从目标库删除。",
 	skipConfirmName: "跳过确认对话框",
 	skipConfirmDesc: "不先展示将要发生的改动，直接执行。",
+	syncOnStartupName: "启动时自动同步",
+	syncOnStartupDesc:
+		"每次打开这个库时，不经确认直接把源库的变化同步到目标库。打开着的库照常跳过。",
+	startupSynced: "启动时已自动同步插件",
 
 	registryError: "无法读取 Obsidian 的库列表",
 	sourceMissing: "源库已不存在，请在设置里重新选择。",
@@ -196,6 +207,10 @@ const zhTW: Strings = {
 	mirrorDeletesDesc: "來源庫已刪除的外掛，也從目標庫刪除。",
 	skipConfirmName: "略過確認對話框",
 	skipConfirmDesc: "不先顯示將發生的變更，直接執行。",
+	syncOnStartupName: "啟動時自動同步",
+	syncOnStartupDesc:
+		"每次開啟這個庫時，不經確認直接把來源庫的變化同步到目標庫。開啟中的庫照常略過。",
+	startupSynced: "啟動時已自動同步外掛",
 
 	registryError: "無法讀取 Obsidian 的庫清單",
 	sourceMissing: "來源庫已不存在，請在設定中重新選擇。",
@@ -250,6 +265,10 @@ const ja: Strings = {
 	mirrorDeletesDesc: "同期元から削除されたプラグインを同期先からも削除します。",
 	skipConfirmName: "確認ダイアログを省略",
 	skipConfirmDesc: "変更内容を表示せずにそのまま実行します。",
+	syncOnStartupName: "起動時に自動で同期",
+	syncOnStartupDesc:
+		"この保管庫を開くたびに、確認なしで同期元の変更を同期先にコピーします。開いている保管庫はこれまでどおりスキップされます。",
+	startupSynced: "起動時にプラグインを同期しました",
 
 	registryError: "Obsidian の保管庫一覧を読み込めませんでした",
 	sourceMissing: "同期元の保管庫が見つかりません。設定で選び直してください。",
@@ -303,6 +322,10 @@ const ko: Strings = {
 	mirrorDeletesDesc: "원본에서 삭제된 플러그인을 대상 보관함에서도 삭제합니다.",
 	skipConfirmName: "확인 창 건너뛰기",
 	skipConfirmDesc: "변경 내용을 먼저 보여주지 않고 바로 실행합니다.",
+	syncOnStartupName: "시작할 때 자동 동기화",
+	syncOnStartupDesc:
+		"이 보관함을 열 때마다 확인 없이 원본 보관함의 변경 사항을 대상 보관함에 복사합니다. 열려 있는 보관함은 평소처럼 건너뜁니다.",
+	startupSynced: "시작할 때 플러그인을 동기화했습니다",
 
 	registryError: "Obsidian 보관함 목록을 읽을 수 없습니다",
 	sourceMissing: "원본 보관함이 존재하지 않습니다. 설정에서 다시 선택하세요.",
@@ -357,7 +380,7 @@ function resolve(tag: string | undefined): Strings | null {
 	return LOCALES[normalised] ?? LOCALES[BASE_ALIASES[base] ?? base] ?? null;
 }
 
-let cachedTag: string | undefined | null = null;
+let cachedTag: string | null = null;
 let cachedStrings: Strings = en;
 let override: string | null = null;
 
@@ -369,10 +392,10 @@ export function setLanguage(code: string): void {
 
 /** Strings for the chosen language, or Obsidian's display language. */
 export function t(): Strings {
-	const tag = override ?? moment.locale();
+	const tag = override ?? getLanguage();
 	if (tag !== cachedTag) {
 		cachedTag = tag;
-		cachedStrings = resolve(tag) ?? resolve(navigator?.language) ?? en;
+		cachedStrings = resolve(tag) ?? en;
 	}
 	return cachedStrings;
 }

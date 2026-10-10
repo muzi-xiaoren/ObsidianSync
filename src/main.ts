@@ -22,6 +22,11 @@ export default class PluginSyncPlugin extends Plugin {
 			callback: () => this.runSync(),
 		});
 		this.addRibbonIcon("copy-plus", t().ribbonTooltip, () => this.runSync());
+
+		// Wait for the layout so startup work does not slow down opening the vault.
+		this.app.workspace.onLayoutReady(() => {
+			if (this.settings.syncOnStartup) this.runSync(true);
+		});
 	}
 
 	/** Absolute path of the vault this plugin instance is running in. */
@@ -32,7 +37,8 @@ export default class PluginSyncPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const saved = (await this.loadData()) as Partial<SyncSettings> | null;
+		this.settings = { ...DEFAULT_SETTINGS, ...saved };
 		setLanguage(this.settings.language);
 	}
 
@@ -40,7 +46,12 @@ export default class PluginSyncPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	runSync(): void {
+	/**
+	 * Plan a sync and, after the user confirms, apply it. On startup there is
+	 * nobody to confirm, so changes are applied straight away and the run stays
+	 * silent unless something was actually written.
+	 */
+	runSync(onStartup = false): void {
 		const s = t();
 
 		let vaults: VaultEntry[];
@@ -61,7 +72,7 @@ export default class PluginSyncPlugin extends Plugin {
 			(v) => v.path !== sourcePath && this.settings.targetVaultPaths.includes(v.path)
 		);
 		if (selected.length === 0) {
-			new Notice(s.noTargetsSelected);
+			if (!onStartup) new Notice(s.noTargetsSelected);
 			return;
 		}
 
@@ -85,6 +96,10 @@ export default class PluginSyncPlugin extends Plugin {
 		});
 
 		const actionable = plans.filter((plan) => !plan.open && changeCount(plan) > 0);
+		if (onStartup) {
+			if (actionable.length > 0) this.apply(sourcePath, actionable, s.startupSynced);
+			return;
+		}
 		if (actionable.length === 0) {
 			// Still show the preview when a vault was skipped for being open, so
 			// the reason nothing happened is visible rather than silent.
@@ -103,12 +118,13 @@ export default class PluginSyncPlugin extends Plugin {
 		new PreviewModal(this.app, plans, () => this.apply(sourcePath, actionable)).open();
 	}
 
-	private apply(sourcePath: string, plans: VaultPlan[]): void {
+	private apply(sourcePath: string, plans: VaultPlan[], title?: string): void {
 		const s = t();
-		new Notice(s.syncing);
+		if (!title) new Notice(s.syncing);
 
 		const results: ApplyResult[] = plans.map((plan) => applyPlan(sourcePath, plan));
 		const lines = results.map((r) => s.vaultResult(r.vaultName, r.created, r.updated, r.removed));
+		if (title) lines.unshift(title);
 		const errors = results.flatMap((r) => r.errors.map((e) => `${r.vaultName} — ${e}`));
 
 		if (errors.length > 0) {

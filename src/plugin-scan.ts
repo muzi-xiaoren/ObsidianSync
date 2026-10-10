@@ -12,13 +12,16 @@ export const CODE_FILES = ["main.js", "manifest.json", "styles.css"] as const;
 /** Optional per-vault settings file, synced only when the user opts in. */
 export const DATA_FILE = "data.json";
 
-export interface InstalledPlugin {
+export interface PluginInfo {
 	/** Folder name under the config folder's plugins/, which is also the plugin id. */
 	id: string;
 	/** Name from manifest.json, for display. Falls back to the id. */
 	name: string;
 	/** Version from manifest.json, or null when unreadable. */
 	version: string | null;
+}
+
+export interface InstalledPlugin extends PluginInfo {
 	/** sha256 of each present code file, keyed by file name. */
 	hashes: Record<string, string>;
 	/** Whether the folder has a data.json. */
@@ -49,14 +52,15 @@ export function communityPluginsFile(vaultPath: string): string {
 }
 
 /**
- * Every plugin installed in a vault. A folder without a manifest.json is not
- * a plugin (it could be a leftover or an editor's scratch dir) and is skipped.
+ * Every plugin installed in a vault, read from manifests only. A folder
+ * without a manifest.json is not a plugin (it could be a leftover or an
+ * editor's scratch dir) and is skipped.
  */
-export function scanPlugins(vaultPath: string): InstalledPlugin[] {
+export function listPlugins(vaultPath: string): PluginInfo[] {
 	const dir = pluginsDir(vaultPath);
 	if (!existsSync(dir)) return [];
 
-	const result: InstalledPlugin[] = [];
+	const result: PluginInfo[] = [];
 	for (const entry of readdirSync(dir, { withFileTypes: true })) {
 		if (!entry.isDirectory()) continue;
 		const folder = join(dir, entry.name);
@@ -75,7 +79,17 @@ export function scanPlugins(vaultPath: string): InstalledPlugin[] {
 		} catch {
 			// A malformed manifest still leaves the folder syncable by hash.
 		}
+		result.push({ id: entry.name, name, version });
+	}
 
+	return result.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** Every plugin installed in a vault, with the hashes needed to diff it. */
+export function scanPlugins(vaultPath: string): InstalledPlugin[] {
+	const dir = pluginsDir(vaultPath);
+	return listPlugins(vaultPath).map((plugin) => {
+		const folder = join(dir, plugin.id);
 		const hashes: Record<string, string> = {};
 		for (const file of CODE_FILES) {
 			const path = join(folder, file);
@@ -83,17 +97,8 @@ export function scanPlugins(vaultPath: string): InstalledPlugin[] {
 				hashes[file] = sha256(readFileSync(path));
 			}
 		}
-
-		result.push({
-			id: entry.name,
-			name,
-			version,
-			hashes,
-			hasData: existsSync(join(folder, DATA_FILE)),
-		});
-	}
-
-	return result.sort((a, b) => a.id.localeCompare(b.id));
+		return { ...plugin, hashes, hasData: existsSync(join(folder, DATA_FILE)) };
+	});
 }
 
 /** The list of enabled community plugins, or [] when absent/malformed. */
@@ -101,7 +106,7 @@ export function readEnabledPlugins(vaultPath: string): string[] {
 	const file = communityPluginsFile(vaultPath);
 	if (!existsSync(file)) return [];
 	try {
-		const parsed = JSON.parse(readFileSync(file, "utf8"));
+		const parsed: unknown = JSON.parse(readFileSync(file, "utf8"));
 		return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
 	} catch {
 		return [];
