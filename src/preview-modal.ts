@@ -66,7 +66,7 @@ export class PreviewModal extends Modal {
 				.addButton((button) =>
 					button
 						.setButtonText(s.forceButton)
-						.setWarning()
+						.setDestructive()
 						.onClick(() => {
 							this.close();
 							this.onForce();

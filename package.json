@@ -1,6 +1,6 @@
 {
 	"name": "vault-plugin-sync",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"description": "Sync installed Obsidian plugins from one vault to your other vaults.",
 	"main": "main.js",
 	"scripts": {
