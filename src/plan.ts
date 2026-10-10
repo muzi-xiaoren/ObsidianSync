@@ -37,6 +37,8 @@ export interface PlanOptions {
 	syncData: boolean;
 	/** Delete plugins from the target that the source no longer has. */
 	mirrorDeletes: boolean;
+	/** Recopy every file even when its contents already match. */
+	force: boolean;
 }
 
 export interface TargetInput {
@@ -145,7 +147,7 @@ function selectPlugins(plugins: InstalledPlugin[], options: PlanOptions): Instal
 /** Every file this plugin would contribute, for a fresh install. */
 function filesOf(plugin: InstalledPlugin, options: PlanOptions): string[] {
 	const files = Object.keys(plugin.hashes).sort();
-	if (options.syncData && plugin.hasData) files.push("data.json");
+	if (options.syncData && plugin.dataHash) files.push("data.json");
 	return files;
 }
 
@@ -159,11 +161,12 @@ function differingFiles(
 	target: InstalledPlugin,
 	options: PlanOptions
 ): string[] {
+	if (options.force) return filesOf(source, options);
 	const files = Object.keys(source.hashes)
 		.filter((file) => source.hashes[file] !== target.hashes[file])
 		.sort();
-	// data.json is compared by presence only: its hash is expected to differ
-	// (it is per-vault state), so hashing it would mean copying on every run.
-	if (options.syncData && source.hasData) files.push("data.json");
+	if (options.syncData && source.dataHash && source.dataHash !== target.dataHash) {
+		files.push("data.json");
+	}
 	return files;
 }

@@ -53,6 +53,12 @@ export interface Strings {
 	kindUpdate: string;
 	kindRemove: string;
 	upToDate: string;
+	/** Shown after the version when only data.json differs. */
+	settingsOnly: string;
+	close: string;
+	forceName: string;
+	forceDesc: string;
+	forceButton: string;
 	openLabel: string;
 
 	syncing: string;
@@ -100,7 +106,7 @@ const en: Strings = {
 	registryError: "Could not read Obsidian's vault list",
 	sourceMissing: "The source vault no longer exists. Pick another one in the settings.",
 	noTargetsSelected: "No target vaults selected. Pick some in the plugin settings.",
-	nothingToDo: "Every target vault already has these plugins.",
+	nothingToDo: "Every target vault is already in sync.",
 
 	modalTitle: "Sync plugins",
 	modalIntro: "These changes will be made:",
@@ -113,6 +119,11 @@ const en: Strings = {
 	kindUpdate: "update",
 	kindRemove: "delete",
 	upToDate: "Already up to date",
+	settingsOnly: "settings only",
+	close: "Close",
+	forceName: "Force overwrite",
+	forceDesc: "Copy every plugin file from the source vault again, even ones that already match.",
+	forceButton: "Force overwrite",
 	openLabel: "open",
 
 	syncing: "Syncing plugins…",
@@ -158,7 +169,7 @@ const zhCN: Strings = {
 	registryError: "无法读取 Obsidian 的库列表",
 	sourceMissing: "源库已不存在，请在设置里重新选择。",
 	noTargetsSelected: "没有选择目标库，请先在插件设置里勾选。",
-	nothingToDo: "所有目标库都已经有这些插件了。",
+	nothingToDo: "所有目标库都已同步。",
 
 	modalTitle: "同步插件",
 	modalIntro: "将进行以下改动：",
@@ -169,7 +180,12 @@ const zhCN: Strings = {
 	kindCreate: "新增",
 	kindUpdate: "更新",
 	kindRemove: "删除",
-	upToDate: "已是最新",
+	upToDate: "已同步",
+	settingsOnly: "仅设置",
+	close: "关闭",
+	forceName: "强制覆盖",
+	forceDesc: "不比较差异，把源库的插件文件全部重新复制一遍。",
+	forceButton: "强制覆盖",
 	openLabel: "正打开",
 
 	syncing: "正在同步插件……",
@@ -215,7 +231,7 @@ const zhTW: Strings = {
 	registryError: "無法讀取 Obsidian 的庫清單",
 	sourceMissing: "來源庫已不存在，請在設定中重新選擇。",
 	noTargetsSelected: "尚未選擇目標庫，請先在外掛設定中勾選。",
-	nothingToDo: "所有目標庫都已經有這些外掛了。",
+	nothingToDo: "所有目標庫都已同步。",
 
 	modalTitle: "同步外掛",
 	modalIntro: "將進行以下變更：",
@@ -226,7 +242,12 @@ const zhTW: Strings = {
 	kindCreate: "新增",
 	kindUpdate: "更新",
 	kindRemove: "刪除",
-	upToDate: "已是最新",
+	upToDate: "已同步",
+	settingsOnly: "僅設定",
+	close: "關閉",
+	forceName: "強制覆蓋",
+	forceDesc: "不比較差異，把來源庫的外掛檔案全部重新複製一遍。",
+	forceButton: "強制覆蓋",
 	openLabel: "正開啟",
 
 	syncing: "正在同步外掛……",
@@ -273,7 +294,7 @@ const ja: Strings = {
 	registryError: "Obsidian の保管庫一覧を読み込めませんでした",
 	sourceMissing: "同期元の保管庫が見つかりません。設定で選び直してください。",
 	noTargetsSelected: "同期先が選択されていません。設定で選んでください。",
-	nothingToDo: "同期先の保管庫はすべて最新です。",
+	nothingToDo: "同期先の保管庫はすべて同期済みです。",
 
 	modalTitle: "プラグインを同期",
 	modalIntro: "次の変更を行います:",
@@ -284,7 +305,12 @@ const ja: Strings = {
 	kindCreate: "追加",
 	kindUpdate: "更新",
 	kindRemove: "削除",
-	upToDate: "最新です",
+	upToDate: "同期済み",
+	settingsOnly: "設定のみ",
+	close: "閉じる",
+	forceName: "強制上書き",
+	forceDesc: "差分を比較せず、同期元のプラグインファイルをすべてコピーし直します。",
+	forceButton: "強制上書き",
 	openLabel: "使用中",
 
 	syncing: "プラグインを同期しています…",
@@ -330,7 +356,7 @@ const ko: Strings = {
 	registryError: "Obsidian 보관함 목록을 읽을 수 없습니다",
 	sourceMissing: "원본 보관함이 존재하지 않습니다. 설정에서 다시 선택하세요.",
 	noTargetsSelected: "대상 보관함이 선택되지 않았습니다. 설정에서 선택하세요.",
-	nothingToDo: "모든 대상 보관함이 이미 최신입니다.",
+	nothingToDo: "모든 대상 보관함이 이미 동기화되어 있습니다.",
 
 	modalTitle: "플러그인 동기화",
 	modalIntro: "다음 변경이 적용됩니다:",
@@ -341,7 +367,12 @@ const ko: Strings = {
 	kindCreate: "추가",
 	kindUpdate: "업데이트",
 	kindRemove: "삭제",
-	upToDate: "이미 최신",
+	upToDate: "동기화됨",
+	settingsOnly: "설정만",
+	close: "닫기",
+	forceName: "강제 덮어쓰기",
+	forceDesc: "차이를 비교하지 않고 원본 보관함의 플러그인 파일을 모두 다시 복사합니다.",
+	forceButton: "강제 덮어쓰기",
 	openLabel: "열림",
 
 	syncing: "플러그인을 동기화하는 중…",

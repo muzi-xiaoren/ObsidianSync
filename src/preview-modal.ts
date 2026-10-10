@@ -8,7 +8,12 @@ import { changeCount, isChange, type PluginAction, type VaultPlan } from "./plan
  * a user cannot easily undo.
  */
 export class PreviewModal extends Modal {
-	constructor(app: App, private plans: VaultPlan[], private onConfirm: () => void) {
+	constructor(
+		app: App,
+		private plans: VaultPlan[],
+		private onConfirm: () => void,
+		private onForce: () => void
+	) {
 		super(app);
 	}
 
@@ -18,8 +23,11 @@ export class PreviewModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass("plugin-sync-preview");
 
+		const writable = this.plans.filter((p) => !p.open);
+		const hasChanges = writable.some((p) => changeCount(p) > 0);
+
 		contentEl.createEl("h2", { text: s.modalTitle });
-		contentEl.createEl("p", { text: s.modalIntro });
+		contentEl.createEl("p", { text: hasChanges ? s.modalIntro : s.nothingToDo });
 
 		for (const plan of this.plans) {
 			const section = contentEl.createDiv({ cls: "plugin-sync-vault" });
@@ -45,12 +53,30 @@ export class PreviewModal extends Modal {
 			}
 		}
 
-		if (this.plans.some((p) => !p.open && changeCount(p) > 0)) {
+		if (hasChanges) {
 			contentEl.createDiv({ cls: "plugin-sync-note", text: s.restartHint });
 		}
 
-		new Setting(contentEl)
-			.addButton((button) =>
+		// Hash comparison already catches edited files; this is an escape hatch
+		// for when the user wants a fresh copy anyway.
+		if (writable.length > 0) {
+			new Setting(contentEl)
+				.setName(s.forceName)
+				.setDesc(s.forceDesc)
+				.addButton((button) =>
+					button
+						.setButtonText(s.forceButton)
+						.setWarning()
+						.onClick(() => {
+							this.close();
+							this.onForce();
+						})
+				);
+		}
+
+		const footer = new Setting(contentEl);
+		if (hasChanges) {
+			footer.addButton((button) =>
 				button
 					.setButtonText(s.confirm)
 					.setCta()
@@ -58,8 +84,11 @@ export class PreviewModal extends Modal {
 						this.close();
 						this.onConfirm();
 					})
-			)
-			.addButton((button) => button.setButtonText(s.cancel).onClick(() => this.close()));
+			);
+		}
+		footer.addButton((button) =>
+			button.setButtonText(hasChanges ? s.cancel : s.close).onClick(() => this.close())
+		);
 	}
 
 	onClose(): void {
@@ -80,6 +109,10 @@ function versionDetail(action: PluginAction): string {
 	if (action.kind === "create") return action.sourceVersion ?? "";
 	if (action.sourceVersion && action.targetVersion && action.sourceVersion !== action.targetVersion) {
 		return `${action.targetVersion} → ${action.sourceVersion}`;
+	}
+	// Same code, different settings: say so, or the row looks like a no-op.
+	if (action.files.length === 1 && action.files[0] === "data.json") {
+		return [action.sourceVersion, t().settingsOnly].filter(Boolean).join(" · ");
 	}
 	return action.sourceVersion ?? "";
 }

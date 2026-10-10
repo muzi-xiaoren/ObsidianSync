@@ -24,8 +24,8 @@ export interface PluginInfo {
 export interface InstalledPlugin extends PluginInfo {
 	/** sha256 of each present code file, keyed by file name. */
 	hashes: Record<string, string>;
-	/** Whether the folder has a data.json. */
-	hasData: boolean;
+	/** sha256 of data.json, or null when the folder has none. */
+	dataHash: string | null;
 }
 
 /**
@@ -97,7 +97,9 @@ export function scanPlugins(vaultPath: string): InstalledPlugin[] {
 				hashes[file] = sha256(readFileSync(path));
 			}
 		}
-		return { ...plugin, hashes, hasData: existsSync(join(folder, DATA_FILE)) };
+		const dataPath = join(folder, DATA_FILE);
+		const dataHash = existsSync(dataPath) ? sha256(readFileSync(dataPath)) : null;
+		return { ...plugin, hashes, dataHash };
 	});
 }
 

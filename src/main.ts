@@ -88,34 +88,35 @@ export default class PluginSyncPlugin extends Plugin {
 			enabled: readEnabledPlugins(vault.path),
 		}));
 
-		const plans = buildPlan(source, targets, {
-			include: [],
-			exclude: this.settings.exclude,
-			syncData: this.settings.syncData,
-			mirrorDeletes: this.settings.mirrorDeletes,
-		});
+		const plan = (force: boolean): VaultPlan[] =>
+			buildPlan(source, targets, {
+				include: [],
+				exclude: this.settings.exclude,
+				syncData: this.settings.syncData,
+				mirrorDeletes: this.settings.mirrorDeletes,
+				force,
+			});
+		const actionable = (plans: VaultPlan[]): VaultPlan[] =>
+			plans.filter((p) => !p.open && changeCount(p) > 0);
 
-		const actionable = plans.filter((plan) => !plan.open && changeCount(plan) > 0);
+		const plans = plan(false);
+		const changes = actionable(plans);
 		if (onStartup) {
-			if (actionable.length > 0) this.apply(sourcePath, actionable, s.startupSynced);
+			if (changes.length > 0) this.apply(sourcePath, changes, s.startupSynced);
 			return;
 		}
-		if (actionable.length === 0) {
-			// Still show the preview when a vault was skipped for being open, so
-			// the reason nothing happened is visible rather than silent.
-			if (plans.some((plan) => plan.open)) {
-				new PreviewModal(this.app, plans, () => undefined).open();
-			} else {
-				new Notice(s.nothingToDo);
-			}
+		if (changes.length > 0 && this.settings.skipConfirm) {
+			this.apply(sourcePath, changes);
 			return;
 		}
-
-		if (this.settings.skipConfirm) {
-			this.apply(sourcePath, actionable);
-			return;
-		}
-		new PreviewModal(this.app, plans, () => this.apply(sourcePath, actionable)).open();
+		// Shown even when nothing changed, so every vault's state is visible
+		// and a forced overwrite is still one click away.
+		new PreviewModal(
+			this.app,
+			plans,
+			() => this.apply(sourcePath, changes),
+			() => this.apply(sourcePath, actionable(plan(true)))
+		).open();
 	}
 
 	private apply(sourcePath: string, plans: VaultPlan[], title?: string): void {

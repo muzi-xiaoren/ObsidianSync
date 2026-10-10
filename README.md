@@ -13,6 +13,7 @@ Obsidian keeps plugins per vault, so with several vaults you end up downloading 
 - **No paths to type.** Your vaults are discovered from Obsidian's own vault list, so you just pick them from a dropdown.
 - **You choose the source vault** in the settings; every other vault can be a target. Sync is one-directional, source → targets.
 - **Preview before anything is written.** A dialog lists exactly what will be added, updated, or deleted, per vault, with version numbers.
+- **Already in sync? It says so.** A vault with nothing to change shows as up to date; **Force overwrite** in the same dialog recopies everything anyway.
 - **The enabled-plugin list is merged, not overwritten.** Plugins a target vault enables on its own stay enabled; a plugin you have turned *off* in the source vault is copied but not switched on.
 - **Per-vault settings are left alone.** `data.json` holds each vault's own configuration for a plugin — WebDAV credentials, sync state — so it is excluded by default. There is an opt-in toggle if you really want it copied.
 - **Changes are detected by content hash**, not just the manifest version, so a hot-reloaded or hand-patched plugin is still recognised as different.
@@ -70,6 +71,7 @@ Obsidian 的插件是按库（vault）各存一份的，库多了就得把同一
 - **同步哪些插件逐个开关**：设置里列出源库的全部插件，关掉的就不同步。
 - **手动或启动时同步**：设置里的「开始同步」按钮、左侧栏图标、命令面板「同步插件到其他库」都能手动触发；打开「启动时自动同步」后，每次打开这个库都会不经预览直接同步一次。
 - **写之前先给你看**：弹窗按库列出将新增 / 更新 / 删除哪些插件，带版本号，确认后才动手。
+- **没变化就显示已同步**：没有差异的库标为「已同步」，同一个弹窗里有「强制覆盖」，可以不比较差异直接全部重新复制。
 - **启用列表是合并而不是覆盖**：目标库自己启用的插件不会被关掉；在源库里被你**停用**的插件，会拷过去但不会被自动启用。
 - **不动各库自己的设置**：`data.json` 存的是这个库自己的插件配置（比如坚果云账号、同步状态），默认排除。想拷可以单独开开关。
 - **按文件内容哈希判断差异**，不只看 manifest 版本号，所以手改过或热重载过的插件也能识别出来。
